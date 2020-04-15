@@ -1,0 +1,525 @@
+<!doctype html>
+<html>
+<head>
+<!--all made by PurePeace at 2020-04-15-->
+<!-- tornado web page -->
+<meta charset="utf-8">
+<link rel="icon" type="image/ico" href="static/icon.ico">
+<title>osu!Kafuu | 控制台</title>
+<script src="static/jquery.min.js"></script>
+<script>
+    var defaultColor = '#B6D1DC'
+    var goodColor = '#4CAF50'
+    var badColor = '#f44336'
+    var unknownColor = '#FF9800'
+    var msgColor = defaultColor
+    var doStatus = '默认'
+    var apiStatus = 'STOPPED'
+    var nginxStatus = 'UNKNOWN'
+    var certStatus = ('{{ cert_status }}' === 'True' ? true : false)
+    var hostsStatus = ('{{ hosts_status }}' === '1' ? true : false)
+
+    $(document).ready(function() {
+        getApiStatus()
+        setInterval(function() {getApiStatus()}, 5000)
+        setTips()
+    })
+
+
+    function setStatus(target, status) {
+        var text = 'UNKNOWN'
+        var targetColor = unknownColor
+        if (status === true) {
+            text = 'RUNNING'
+            targetColor = goodColor
+        } else if (status === false) {
+            text = 'STOPPED'
+            targetColor = badColor
+        }
+
+        if (target === 'api') {
+            apiStatus = text
+            $('#api-status').text(text)
+            $('#api-status-circle').css({'background-color': targetColor})
+        } else if (target === 'nginx') {
+            nginxStatus = text
+            $('#nginx-status').text(text)
+            $('#nginx-status-circle').css({'background-color': targetColor})
+        }
+
+    }
+
+
+    function setTips() {
+        if (hostsStatus === true) {
+            $('#tip0').text(' (已切换)').css({'color': goodColor})
+            $('#tip1').text('')
+            $('#tab0').css({'filter': 'brightness(85%)'})
+            $('#tab1').css({'filter': 'brightness(100%)'})
+        } else {
+            $('#tip1').text(' (已切换)').css({'color': goodColor})
+            $('#tip0').text('')
+            $('#tab1').css({'filter': 'brightness(85%)'})
+            $('#tab0').css({'filter': 'brightness(100%)'})
+        }
+
+        if (certStatus === true) {
+            $('#tip3').text(' (已安装)').css({'color': goodColor})
+            $('#tip4').text('')
+            $('#tab4').css({'filter': 'brightness(100%)'})
+            $('#tab3').css({'filter': 'brightness(85%)'})
+        } else {
+            $('#tip3').text(' (未安装)').css({'color': badColor})
+            $('#tip4').text(' (无需移除)').css({'color': goodColor})
+            $('#tab4').css({'filter': 'brightness(85%)'})
+            $('#tab3').css({'filter': 'brightness(100%)'})
+        }
+    }
+
+    function getApiStatus() {
+        $.ajax({
+            url: 'status', 
+            async: true,
+            success : function(result) {
+                // console.log(result)
+                if (result && result.status === 1) {
+                    setStatus('api', true)
+                    if (result.nginx === 1) {
+                        setStatus('nginx', true)
+                    } else {
+                        setStatus('nginx', false)
+                    }
+                } else {
+                    setStatus('api', false)
+                    setStatus('nginx', 'UNKNOWN')
+                }
+            },
+            error : function(jqXHR, textStatus, errorThrown){
+                console.log(jqXHR)
+                console.log(textStatus)
+                console.log(errorThrown)
+                setStatus('api', false)
+                setStatus('nginx', false)
+            }
+            
+        })
+    }
+
+
+    function clicked(data) {
+        // console.log(data)
+        if (apiStatus === 'STOPPED') {
+            setMessage('api服务已停止，无法进行操作。', false)
+        } else {
+            if (data.item_idx === '3' || data.item_idx === '4') {
+                $('#loading').text('请留意弹框或任务栏...')
+            }
+            showLoading()
+            $.ajax({
+                url: data.link, 
+                async: true,
+                success : function(result) {
+                    // console.log(result)
+                    console.log(data)
+                    if (data.link === 'api/exit_all') {
+                        setMessage('服务停止失败，请您手动在任务管理器中结束服务（KafuuService.exe / nginx.exe）', false)
+                    } else {
+                        var reStatus = true
+                        if (result.result === false) {
+                            reStatus = false
+                        } else {
+                            if (data.item_idx === '0') {
+                                hostsStatus = true
+                            } else if (data.item_idx === '2') {
+                                if (result.result === 1) {
+                                    hostsStatus = true
+                                } else {
+                                    hostsStatus = false
+                                }
+                            } else if (data.item_idx === '1') {
+                                hostsStatus = false
+                            } else if (data.item_idx === '3') {
+                                certStatus = true
+                            } else if (data.item_idx === '4') {
+                                certStatus = false
+                                
+                            }
+                        }
+                        setTips()
+                        setMessage('执行结果：' + result.result + '<br>' + data.title, reStatus)
+                    }
+                    hideLoading()
+                },
+                error : function(jqXHR, textStatus, errorThrown){
+                    if (data.item_idx === '6' || data.item_idx === '5') {
+                        console.log('服务已停止')
+                        setStatus('api', false)
+                        setStatus('nginx', false)
+                        setMessage('已成功停止' + (data.item_idx===6?'所有的':'api') + '服务！您可以关闭本页面了，欢迎下次再来！', true)
+                    } else {
+                        console.log(jqXHR)
+                        console.log(textStatus)
+                        console.log(errorThrown)
+                        setMessage(data.title + '出错：' + errorThrown + '(' + textStatus + ')', false)
+                    }
+                    hideLoading()
+                }
+            })    
+        }
+    }
+
+    function setMessage(text, status) {
+        if (status == true) {
+            msgColor = goodColor
+            doStatus = '成功√'
+        } else if (status == false) {
+            msgColor = badColor
+            doStatus = '失败×'
+        } else if (status == 'defautlt') {
+            msgColor = defaultColor
+            doStatus = '默认'
+        } else {
+            msgColor = unknownColor
+            doStatus = '未知？'
+        }
+        $("#msg").html(text + ' <span style="font-weight: bold;">[' + doStatus + ']</span>').css({color: msgColor})
+    }
+
+
+    function showLoading() {
+        $("#mask").css({'animation-name': 'maskShow'})
+        $("#mask").show()
+    }
+
+    function hideLoading() {
+        $("#mask").css({'animation-name': 'maskHidden'})
+        $("#loading").text('加载中...')
+        setTimeout(function() {$("#mask").hide()}, 300)
+    }
+</script>
+</head>
+<body>
+    <div class="information-box">
+        <div class="information-head">
+            <span>>> 信息
+                <span style="font-size: 14px;">information</span>
+            </span>
+        </div>
+        <div id="msg" class="information-msg">
+            {{ msg }}
+        </div>
+    </div>
+
+    {% if show_tab == True %}
+    <div class="api-tab">
+        <div class="api-tab-content">
+            {% for item_idx, item in enumerate(apis) %}
+                <div 
+                    class="click-button {{ 'default' if item['color'] in (None, '') else 'red' }}-button" 
+                    id="tab{{ item_idx }}"
+                    onclick="clicked({title: `{{ item['title'] }}`, link: `{{ item['link'] }}`, item_idx: `{{ item_idx }}`})"
+                >
+                    <span style="color: #FAFAFA;">{{ item['title'] }}
+                        <span style="color: #4CAF50;" id="tip{{ item_idx }}"></span>
+                    </span>
+                </div>
+            {% end %}
+        </div>
+    </div>
+    {% end %}
+
+
+    <div class="footer-box">
+        <span class="service-status-box">
+            <span>
+                api:
+                <span style="font-weight: bold;" id="api-status">STOPPED</span>
+                <span style="background-color: #f44336;" class="status-circle" id="api-status-circle"></span>
+            </span>
+            <span style="margin: 0 20px;">/</span>
+             <span>
+                nginx:
+                <span style="font-weight: bold;" id="nginx-status">UNKNOWN</span>
+                <span style="background-color: #FF9800;" class="status-circle" id="nginx-status-circle"></span>
+             </span>
+        </span>
+        <div class="footer-content">
+            <div style="font-size: 20px; padding-top: 16px;">
+                <span>osu!Kafuu / Service Api</span> 
+                <span style="font-size: 14px;">( Local )</span>
+                <div style="float: right; font-size: 24px;">
+                    <a href="http://otsu.fun" class="link" target="blank">
+                        主页 <span style="font-size: 14px;">Homepage <</span>
+                        <div style="font-size: 12px; padding: 5px;">osu!Kafuu Website</div>
+                    </a>
+                </div>
+            </div>
+            <div class="footer-info">
+                <div>version: {{ version }}</div>
+                <div>author: PurePeace</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="mask">
+        <div class="mask-content">
+            <div>
+                <img class="rotate-image" src="static/icon.ico">
+            </div>
+            <div id="loading">加载中...</div>
+        </div>
+    </div>
+
+</body>
+<style>
+
+    * {
+        margin: 0px;
+        padding: 0px;
+    }
+
+    html, body {
+        height: 120%;
+        font-size: 14px;
+    }
+
+    body {
+        background-color: #263238; 
+        font-weight: lighter; 
+        color: #B6D1DC; 
+        font-family: Microsoft YaHei, Arial, Helvetica, sans-serif;
+    }
+    
+
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 5px;
+    }
+    ::-webkit-scrollbar-thumb {
+        border-radius: 150px;
+        background: #3f3f3f;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        border-radius: 150px;
+        background: #4A4A4A;
+    }
+    ::-webkit-scrollbar-track {
+        border-radius: 150px;
+        background: #ccc;
+    }
+
+    a {
+        text-decoration: none;
+        color: #B6D1DC;
+        transition: .4s ease;
+    }
+    .link:hover {
+        color: rgb(105, 179, 209);
+    }
+
+    @keyframes fadeIn {
+        from {
+          opacity: .10;
+          transform: translate3d(-8%, 0, 0);
+        }
+      
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      
+    div{
+        animation-duration: .8s;
+        animation-fill-mode: both;
+        animation-name: fadeIn;
+    }
+
+    @keyframes rotatego {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .rotate-image {
+        animation-name: rotatego;
+        animation-duration: 1s;
+        animation-iteration-count: infinite;
+    }
+
+    @keyframes maskShow {
+        from {
+            opacity: 0;
+            -moz-opacity:0; 
+            filter: alpha(opacity=0);   
+        }
+
+        to {
+            opacity: 0.6;
+            -moz-opacity:0.6; 
+            filter: alpha(opacity=60); 
+        }
+    }
+
+    @keyframes maskHidden {
+        from {
+            opacity: 0.6;
+            -moz-opacity: 0.6; 
+            filter: alpha(opacity=60); 
+        }
+
+        to {
+            opacity: 0;
+            -moz-opacity:0; 
+            filter: alpha(opacity=0);  
+        }
+    }
+
+    .footer-info {
+        margin-top: 4px; 
+        font-size: 12px;
+    }
+
+    .footer-content {
+        padding: 15px; 
+        width: 65%; 
+        margin: 0 auto;
+    }
+
+    .footer-box {
+        position: fixed; 
+        bottom: 0; 
+        height: 130px; 
+        background-color: #1A2226; 
+        width: 100%;
+    }
+
+    .mask-content {
+        position: fixed; 
+        top: 50%; 
+        left: 50%; 
+        margin-left: -60px; 
+        margin-top: -70px; 
+        text-align: center;
+    }
+
+    .api-tab-content {
+        display: flex; 
+        flex-flow: row wrap; 
+        justify-content: center; 
+        padding: 50px 20px;
+    }
+
+    .api-tab {
+        width: 65%; 
+        margin: 30px auto; 
+        border-radius: 8px; 
+        background-color: #2D3A41; 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+    }
+
+    .information-msg {
+        padding: 20px; 
+        text-align: center; 
+        font-size: 20px; 
+        padding: 40px; 
+        word-break:break-all
+    }
+
+    .information-head {
+        font-size: 20px; 
+        padding: 15px; 
+        background-color: rgba(26, 34, 38, 0.849); 
+        border-radius: 8px 8px 0 0;
+    }
+
+    .information-box {
+        width: 65%; 
+        margin: 50px auto 0 auto;
+        border-radius: 8px; 
+        background-color: #2D3A41; 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+    }
+
+    .status-circle {
+        width: 12px; 
+        height: 12px; 
+        display: inline-block; 
+        border-radius: 50%;
+    }
+
+    .service-status-box {
+        box-shadow: 0 4px 15px rgba(0,0,0,0.14); 
+        margin-right: -170px; 
+        color: #FAFAFA; 
+        border-radius: 8px; 
+        font-size: 16px; 
+        background-color: #212425; 
+        padding: 8px 20px; 
+        position: absolute; 
+        top: -55px; 
+        right: 25%;
+        -webkit-user-select: none;
+        user-select: none;
+        -moz-user-select: none;
+        cursor: pointer;
+    }
+
+    #mask {
+        animation-duration: .4s;
+        animation-name: maskShow; 
+        position: fixed; 
+        top: 0; 
+        left: 0; 
+        z-index: 9999; 
+        height: 200%; 
+        width: 200%; 
+        background-color: #000000; 
+        display: none;
+    }
+
+    .click-button {
+        color: #FFFFFF;
+        border-radius: 8px; 
+        padding: 16px; 
+        width: 30%; 
+        min-width: 340px; 
+        text-align: center; 
+        -webkit-user-select: none;
+        user-select: none;
+        -moz-user-select: none;
+        cursor: pointer;
+        transition: .4s ease;
+        margin: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+    }
+
+    .red-button:hover {
+        background-color: #E50D0D;
+    }
+
+    .red-button:active {
+        background-color: #AE0B0B;
+    }
+
+    .red-button {
+        background-color: #BE1313; 
+    }
+
+    .default-button {
+        background-color: #364E59;
+    }
+
+    .default-button:hover {
+        background-color: #3C5B6A;
+    }
+
+    .default-button:active {
+        background-color: #2F4A57;
+    }
+</style>
+</html>

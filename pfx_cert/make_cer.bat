@@ -1,0 +1,1 @@
+openssl req -newkey rsa:2048 -nodes -keyout osuKafuu.key -x509 -days 365 -out osuKafuu.cer

@@ -1,0 +1,14 @@
+/unpack/
+osuKafuu.cer
+osuKafuu.key
+/dist/
+/build/
+/__pycache__/
+*.c
+*.pyx
+*.log
+*.pfx
+make_sign.bat
+build_exe32.bat
+build_exe32_all.bat
+build_pyd32.bat
