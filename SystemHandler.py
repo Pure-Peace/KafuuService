@@ -184,6 +184,10 @@ def kill_process_by_pid(pid):
             return execute_cmd(f"taskkill -pid {pid} -f -t")
 
 
+def kill_self():
+    kill_process_by_port(13377)
+
+
 def run_nginx():
     logg('启动nginx服务...')
     stop_nginx()
@@ -227,11 +231,9 @@ def stop_nginx():
     if is_running == True:
         try:
             result = execute_cmd('{} -s stop'.format('nginx.exe'))
-            if result == '':
-                raise Exception('未知的结果')
-        except Exception as err:
-            logg(f'停止nginx，执行方法1：{err} 将使用方法2执行')
             result = execute_cmd('taskkill /f /t /im nginx.exe')
+        except Exception as err:
+            logg(f'停止nginx时遇到错误：{err} ')
             
     else:
         logg('无需停止！')

@@ -10,7 +10,7 @@ Utils everything
 import time, datetime
 from os import getcwd
 
-log_handle = True
+log_handle = 'write'
 log_path = f'{getcwd()}\\run.log'
 with open(log_path, 'w', encoding='utf-8') as init_file:
     pass

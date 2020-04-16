@@ -1,0 +1,8 @@
+WMI==1.4.9
+tornado==6.0.3
+pythonnet==2.4.0
+pywin32==227
+pywin32-ctypes==0.2.0
+requests==2.22.0
+PyInstaller==3.6
+Cython==0.29.15

@@ -11,7 +11,7 @@ import ctypes, sys
 import win32api as _a
 import win32con as _c
 import WebService
-from SystemHandler import run_nginx, stop_nginx, write_all
+from SystemHandler import run_nginx, kill_self
 from ApiHandler import add_hosts
 from Utils import logg
 
@@ -53,6 +53,7 @@ def message_box(text, title, options):
 def main(dev):  
     if dev != True: 
         check_admin()
+    kill_self()
     run_nginx()
     add_hosts()
     WebService.run_app()
