@@ -12,8 +12,8 @@ a = Analysis(['Entrance.py'],
                  ('static\\jquery.min.js', 'static'), 
                  ('static\\MainPage.html', 'static'), 
                  ('static\\icon.ico', 'static'), 
-                 ('static\\System.Security.dll', 'static'), 
-                 ('nginx', 'nginx')],
+                 ('static\\System.Security.dll', 'static')
+             ],
              hiddenimports=[
                  'DllLoader', 
                  'Entrance', 
@@ -26,6 +26,7 @@ a = Analysis(['Entrance.py'],
                  'WebService', 
                  'wmi', 
                  'json', 
+                 'requests',
                  'tornado.web', 
                  'tornado.ioloop', 
                  'clr'

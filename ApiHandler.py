@@ -29,12 +29,8 @@ def remove_cert():
     return cm.remove_cert()
 
 
-def get_nginx_status():
-    return 1 if (sy.check_nginx() == True) else -1
-
-
 def get_service_status():
-    return {'status': 1, 'nginx': get_nginx_status()}
+    return {'status': 1}
 
 
 def check_hosts():
@@ -79,14 +75,6 @@ def get_sys_info(what=None):
         return -1
 
 
-def start_nginx():
-    return sy.run_nginx()
-
-
-def stop_nginx():
-    return sy.stop_nginx()
-
-
 def program_dir():
     return sy.base_path()
 
@@ -101,9 +89,4 @@ def exit_all():
 def exit_api():
     logg(f'apiHandle：退出api')
     return sy.exit_api()
-
-
-
-    
-
 

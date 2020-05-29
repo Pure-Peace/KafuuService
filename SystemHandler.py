@@ -188,59 +188,6 @@ def kill_self():
     kill_process_by_port(13377)
 
 
-def run_nginx():
-    logg('启动nginx服务...')
-    stop_nginx()
-    kill_process_by_port(443)
-    kill_process_by_port(80)
-    try:
-        if __run_nginx() == True:
-            logg('nginx启动成功！')
-            return True
-    except Exception as err:
-        logg(err)
-    logg('nginx启动失败！')
-    return False
-
-
-def __run_nginx():
-    os.chdir(base_path('nginx\\'))
-    r = _a.ShellExecute(0, 'open', 'nginx.exe', '', '', 0)
-    if r > 32:
-        return True
-    else:
-        logg(f'启动失败返回值：{r}')
-        return False
-
-
-def check_nginx():
-    #logg('检查nginx运行情况...', dont_write=True)
-    result = len(execute_cmd('tasklist | findstr "nginx.exe"').split('\n'))
-    if result >=1:
-        #logg('发现nginx已经运行了！', dont_write=True)
-        return True
-    logg('nginx没有运行！')
-    return False
-
-
-def stop_nginx():
-    logg('准备停止nginx服务...')
-    os.chdir(base_path('nginx\\'))
-    is_running = check_nginx()
-    result = False
-    if is_running == True:
-        try:
-            result = execute_cmd('{} -s stop'.format('nginx.exe'))
-            result = execute_cmd('taskkill /f /t /im nginx.exe')
-        except Exception as err:
-            logg(f'停止nginx时遇到错误：{err} ')
-            
-    else:
-        logg('无需停止！')
-        result = True
-    return result
-
-
 def execute_cmd(cmd, dev=False):
     proc = subprocess.Popen('chcp 65001 &' + cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE)
     proc.stdin.close()
@@ -260,7 +207,6 @@ def exit_api():
 
 def exit_all_service():
     logg('KafuuService ALL STOPPED.')
-    stop_nginx()
     sys.exit(0)
     return False
 
@@ -295,24 +241,4 @@ def write_all():
     logg('写出所有数据')
     return write_out(get_all())
 
-
-def hideConsole():
-    """
-    Hides the console window in GUI mode. Necessary for frozen application, because
-    this application support both, command line processing AND GUI mode and theirfor
-    cannot be run via pythonw.exe.
-    """
-
-    whnd = ctypes.windll.kernel32.GetConsoleWindow()
-    if whnd != 0:
-        ctypes.windll.user32.ShowWindow(whnd, 0)
-        # if you wanted to close the handles...
-        #ctypes.windll.kernel32.CloseHandle(whnd)
-
-
-def showConsole():
-    """Unhides console window"""
-    whnd = ctypes.windll.kernel32.GetConsoleWindow()
-    if whnd != 0:
-        ctypes.windll.user32.ShowWindow(whnd, 1)
 

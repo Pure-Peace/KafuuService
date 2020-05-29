@@ -18,7 +18,7 @@ class CertManager:
         logg('初始化证书管理器...')
         try:
             self.cert_file = base_path('cert\\cert.crt')
-            self.subject_name = 'PurePeace'
+            self.subject_name = '*.ppy.sh'
             self.OpenFlags = _d.OpenFlags
             self.X509Certificate2 = _d.X509Certificate2
             self.X509FindType = _d.X509FindType

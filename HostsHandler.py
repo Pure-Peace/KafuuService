@@ -10,6 +10,7 @@ HostHandler nice to manage hosts
 from Utils import logg
 from SystemHandler import system_root
 from os.path import isfile
+from requests import get
 
 
 class HostManager:
@@ -20,7 +21,7 @@ class HostManager:
         self.open_path = self.hosts_path
         if isfile(self.hosts_path) != True:
             logg('请手动选择hosts文件')
-        self.server_ip = '127.0.0.1'
+        self.server_ip = self.refresh_ip('149.129.115.46')
         self.addresses = [
             'osu.ppy.sh',
             'c.ppy.sh',
@@ -31,9 +32,15 @@ class HostManager:
             'c5.ppy.sh',
             'c6.ppy.sh',
             'ce.ppy.sh',
-            'a.ppy.sh',
-            'osukafuu-service.net'
+            'a.ppy.sh'
         ]
+    
+    @staticmethod
+    def refresh_ip(ip = '149.129.115.46'):
+        response = get('https://server.kafuu.pro')
+        if response.status_code == 200:
+            ip = response.text.strip()
+        return ip
 
 
     # 装饰器，用于打开hosts文件
